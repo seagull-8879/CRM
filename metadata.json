@@ -1,0 +1,10 @@
+{
+  "name": "CRM MVP",
+  "description": "Salesforce-inspired Custom CRM MVP for managing client companies, contacts with visiting card OCR, sales opportunities, activities, and pipeline analytics.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
