@@ -56,12 +56,12 @@ export const AnalyticsView: React.FC = () => {
   });
 
   return (
-    <div id="crm-analytics-view" className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div id="crm-analytics-view" className="p-3.5 sm:p-6 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Executive Analytics & Reports</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Executive Analytics & Reports</h1>
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full">
               Live Pipeline BI
             </span>

@@ -2,16 +2,47 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-purple-50: #faf5ff;
+  --color-purple-100: #f3e8ff;
+  --color-purple-200: #e9d5ff;
+  --color-purple-300: #c084fc;
+  --color-purple-400: #8b24d6;
+  --color-purple-500: #6e1db8;
+  --color-purple-600: #581498;
+  --color-purple-700: #450e7a;
+  --color-purple-800: #350960;
+  --color-purple-900: #240544;
+  --color-purple-950: #140228;
+
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #60a5fa;
+  --color-blue-400: #1d4ed8;
+  --color-blue-500: #183eb5;
+  --color-blue-600: #122e94;
+  --color-blue-700: #0e2374;
+  --color-blue-800: #0a1856;
+  --color-blue-900: #071038;
+  --color-blue-950: #040924;
+
+  --color-indigo-400: #4338ca;
+  --color-indigo-500: #3730a3;
+  --color-indigo-600: #272175;
+  --color-indigo-700: #1e1960;
+}
+
 @layer base {
   :root {
-    --maverics-purple: #9333EA;
-    --maverics-purple-light: #C084FC;
-    --maverics-purple-dark: #6B21A8;
-    --maverics-blue: #2563EB;
-    --maverics-blue-light: #60A5FA;
-    --maverics-blue-dark: #1E3A8A;
-    --maverics-gradient: linear-gradient(135deg, #9333EA 0%, #2563EB 100%);
-    --maverics-gradient-hover: linear-gradient(135deg, #A855F7 0%, #3B82F6 100%);
+    --maverics-purple: #581498;
+    --maverics-purple-light: #6e1db8;
+    --maverics-purple-dark: #350960;
+    --maverics-blue: #122e94;
+    --maverics-blue-light: #183eb5;
+    --maverics-blue-dark: #0a1856;
+    --maverics-gradient: linear-gradient(135deg, #581498 0%, #122e94 100%);
+    --maverics-gradient-hover: linear-gradient(135deg, #6e1db8 0%, #183eb5 100%);
     
     /* Light Mode Default Variables */
     --bg-app: #F4F6FB;
@@ -60,30 +91,30 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(147, 51, 234, 0.2);
+    background: rgba(88, 20, 152, 0.3);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(37, 99, 235, 0.4);
+    background: rgba(18, 46, 148, 0.5);
   }
 }
 
 /* Maverick Brand Gradient Utilities */
 .bg-maverics-gradient {
-  background: linear-gradient(135deg, #9333EA 0%, #2563EB 100%);
+  background: linear-gradient(135deg, #581498 0%, #122e94 100%);
 }
 
 .bg-maverics-gradient-hover:hover {
-  background: linear-gradient(135deg, #A855F7 0%, #3B82F6 100%);
+  background: linear-gradient(135deg, #6e1db8 0%, #183eb5 100%);
 }
 
 .text-maverics-gradient {
-  background: linear-gradient(135deg, #C084FC 0%, #60A5FA 100%);
+  background: linear-gradient(135deg, #8b24d6 0%, #1d4ed8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .border-maverics-glow {
-  border-color: rgba(147, 51, 234, 0.3);
-  box-shadow: 0 0 15px -3px rgba(147, 51, 234, 0.15);
+  border-color: rgba(88, 20, 152, 0.35);
+  box-shadow: 0 0 15px -3px rgba(88, 20, 152, 0.25);
 }

@@ -91,11 +91,11 @@ export const HomeView: React.FC = () => {
   const recentActivityList = activities.slice(0, 6);
 
   return (
-    <div id="home-dashboard-view" className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div id="home-dashboard-view" className="p-3.5 sm:p-6 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 transition-colors">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-4 sm:p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800/80 transition-colors">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs uppercase tracking-widest font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
               Welcome back
             </span>
@@ -103,7 +103,7 @@ export const HomeView: React.FC = () => {
               • {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
             Hello, {currentUser?.name || 'Sales Professional'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
@@ -111,23 +111,23 @@ export const HomeView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             onClick={() => setIsOcrScannerOpen(true)}
-            className="px-4 py-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-semibold flex items-center gap-2 border border-purple-500/25 transition-all active:scale-[0.98] cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-purple-500/25 transition-all active:scale-[0.98] cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span>Scan Visiting Card</span>
+            <span>Scan Card</span>
           </button>
           <button
             onClick={() => {
               setEditingOpportunity(null);
               setIsOpportunityModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-md shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Opportunity</span>
+            <span>New Deal</span>
           </button>
         </div>
       </div>

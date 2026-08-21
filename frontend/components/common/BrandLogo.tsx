@@ -33,14 +33,14 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         >
           <defs>
             <linearGradient id="iconPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#C084FC" />
-              <stop offset="40%" stopColor="#9333EA" />
-              <stop offset="100%" stopColor="#6B21A8" />
+              <stop offset="0%" stopColor="#8B24D6" />
+              <stop offset="40%" stopColor="#581498" />
+              <stop offset="100%" stopColor="#350960" />
             </linearGradient>
             <linearGradient id="iconBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#60A5FA" />
-              <stop offset="45%" stopColor="#2563EB" />
-              <stop offset="100%" stopColor="#1E3A8A" />
+              <stop offset="0%" stopColor="#1D4ED8" />
+              <stop offset="45%" stopColor="#122E94" />
+              <stop offset="100%" stopColor="#0A1856" />
             </linearGradient>
           </defs>
           <g transform="translate(6, 6) scale(0.88)">
@@ -76,26 +76,26 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       >
         <defs>
           <linearGradient id="brandPurpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#C084FC" />
-            <stop offset="35%" stopColor="#9333EA" />
-            <stop offset="100%" stopColor="#581C87" />
+            <stop offset="0%" stopColor="#8B24D6" />
+            <stop offset="35%" stopColor="#581498" />
+            <stop offset="100%" stopColor="#350960" />
           </linearGradient>
 
           <linearGradient id="brandBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#60A5FA" />
-            <stop offset="40%" stopColor="#2563EB" />
-            <stop offset="85%" stopColor="#1E3A8A" />
-            <stop offset="100%" stopColor="#0F172A" />
+            <stop offset="0%" stopColor="#1D4ED8" />
+            <stop offset="40%" stopColor="#122E94" />
+            <stop offset="85%" stopColor="#0E2374" />
+            <stop offset="100%" stopColor="#071038" />
           </linearGradient>
 
           <linearGradient id="brandTextPurple" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#A855F7" />
-            <stop offset="100%" stopColor="#9333EA" />
+            <stop offset="0%" stopColor="#6E1DB8" />
+            <stop offset="100%" stopColor="#581498" />
           </linearGradient>
 
           <linearGradient id="brandTextBlue" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#2563EB" />
-            <stop offset="100%" stopColor="#1D4ED8" />
+            <stop offset="0%" stopColor="#183EB5" />
+            <stop offset="100%" stopColor="#122E94" />
           </linearGradient>
         </defs>
 

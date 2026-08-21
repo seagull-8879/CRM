@@ -78,15 +78,15 @@ export const AccountDetailDrawer: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-xs">
       <div className="bg-white dark:bg-[#111625] w-full max-w-3xl h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
         {/* Drawer Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0E121E] shrink-0">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-blue-600 text-white flex items-center justify-center shadow-xs font-bold text-lg">
-                <Building2 className="w-6 h-6" />
+        <div className="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0E121E] shrink-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-blue-600 text-white flex items-center justify-center shadow-xs font-bold text-base sm:text-lg shrink-0">
+                <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{account.name}</h2>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">{account.name}</h2>
                   <span
                     className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full border ${
                       account.rating === 'Hot'
@@ -99,7 +99,7 @@ export const AccountDetailDrawer: React.FC = () => {
                     {account.rating} Lead
                   </span>
                 </div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-3 flex-wrap">
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 sm:gap-3 flex-wrap">
                   <span>{account.industry}</span>
                   <span>•</span>
                   <span>{account.businessSegment}</span>
@@ -109,20 +109,20 @@ export const AccountDetailDrawer: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button
                 onClick={() => {
                   setEditingAccount(account);
                   setIsAccountModalOpen(true);
                 }}
-                className="p-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs font-medium flex items-center gap-1 border border-slate-200 dark:border-slate-800 cursor-pointer"
+                className="p-1.5 sm:p-2 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs font-medium flex items-center gap-1 border border-slate-200 dark:border-slate-800 cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit</span>
+                <span className="hidden sm:inline">Edit</span>
               </button>
               <button
                 onClick={() => setSelectedAccountIdFor360(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -130,7 +130,7 @@ export const AccountDetailDrawer: React.FC = () => {
           </div>
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
             <div className="p-2.5 bg-white dark:bg-[#121215] border border-slate-200 dark:border-slate-800 rounded-xl">
               <div className="text-[10px] font-semibold text-slate-400 uppercase">Annual Revenue</div>
               <div className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">

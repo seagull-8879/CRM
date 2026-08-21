@@ -18,6 +18,7 @@ import { ToolsView } from './components/tools/ToolsView';
 import { SettingsView } from './components/settings/SettingsView';
 import { OcrScannerModal } from './components/ocr/OcrScannerModal';
 import { EmailComposerModal } from './components/common/EmailComposerModal';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
 
 const CrmMainApp: React.FC = () => {
   const { currentUser, activeTab, theme } = useCrm();
@@ -40,7 +41,7 @@ const CrmMainApp: React.FC = () => {
         <Header />
 
         {/* Dynamic Route View */}
-        <main className="flex-1 overflow-y-auto pb-12 bg-transparent">
+        <main className="flex-1 overflow-y-auto pb-20 lg:pb-12 bg-transparent">
           {currentTab === 'home' && <HomeView />}
           {currentTab === 'accounts' && <AccountsView />}
           {currentTab === 'contacts' && <ContactsView />}
@@ -49,6 +50,9 @@ const CrmMainApp: React.FC = () => {
           {currentTab === 'my-account' && <SettingsView />}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
 
       {/* Global Modals & Drawers */}
       <OpportunityModal />

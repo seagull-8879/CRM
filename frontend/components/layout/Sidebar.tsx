@@ -12,12 +12,23 @@ import {
   Shield,
   Sun,
   Moon,
+  X,
 } from 'lucide-react';
 import { useCrm, NavTab } from '../../context/CrmContext';
 import { BrandLogo } from '../common/BrandLogo';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, currentUser, logout, setIsOcrScannerOpen, theme, toggleTheme } = useCrm();
+  const {
+    activeTab,
+    setActiveTab,
+    currentUser,
+    logout,
+    setIsOcrScannerOpen,
+    theme,
+    toggleTheme,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
+  } = useCrm();
 
   const navItems: { id: NavTab; label: string; icon: React.ElementType; badge?: string }[] = [
     { id: 'home', label: 'Home', icon: LayoutDashboard },
@@ -28,11 +39,13 @@ export const Sidebar: React.FC = () => {
     { id: 'my-account', label: 'My Account', icon: UserCheck },
   ];
 
-  return (
-    <aside
-      id="crm-sidebar"
-      className="w-64 bg-white dark:bg-[#0E121E] text-slate-800 dark:text-slate-200 flex flex-col shrink-0 border-r border-slate-200 dark:border-slate-800/80 select-none h-screen sticky top-0 transition-colors duration-200"
-    >
+  const handleNavSelect = (id: NavTab) => {
+    setActiveTab(id);
+    setIsMobileSidebarOpen(false);
+  };
+
+  const renderNavContent = (isMobile = false) => (
+    <div className="flex flex-col h-full w-full select-none">
       {/* Brand Header with TheMaverics Vector Logo */}
       <div className="p-4 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-transparent">
         <div className="flex flex-col items-start gap-1">
@@ -46,13 +59,26 @@ export const Sidebar: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {isMobile && (
+          <button
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            aria-label="Close navigation"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Quick Action: Scan Business Card Banner */}
       <div className="px-3.5 pt-3.5 pb-1.5">
         <button
-          id="sidebar-scan-visiting-card-btn"
-          onClick={() => setIsOcrScannerOpen(true)}
+          id={isMobile ? 'mobile-sidebar-scan-btn' : 'sidebar-scan-visiting-card-btn'}
+          onClick={() => {
+            setIsOcrScannerOpen(true);
+            if (isMobile) setIsMobileSidebarOpen(false);
+          }}
           className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-purple-900/20 active:scale-[0.98] cursor-pointer"
         >
           <ScanLine className="w-4 h-4 text-purple-100" />
@@ -74,8 +100,8 @@ export const Sidebar: React.FC = () => {
           return (
             <button
               key={item.id}
-              id={`sidebar-nav-${item.id}`}
-              onClick={() => setActiveTab(item.id)}
+              id={`sidebar-nav-${item.id}${isMobile ? '-mobile' : ''}`}
+              onClick={() => handleNavSelect(item.id)}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-all cursor-pointer ${
                 isActive
                   ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md shadow-purple-900/25 font-semibold'
@@ -99,7 +125,7 @@ export const Sidebar: React.FC = () => {
       {/* Theme Switcher Quick Toggle in Sidebar */}
       <div className="px-3 py-2 border-t border-slate-200 dark:border-slate-800/80">
         <button
-          id="sidebar-theme-toggle-btn"
+          id={isMobile ? 'mobile-sidebar-theme-toggle' : 'sidebar-theme-toggle-btn'}
           onClick={toggleTheme}
           className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/60 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
         >
@@ -136,7 +162,7 @@ export const Sidebar: React.FC = () => {
               </div>
             </div>
             <button
-              id="sidebar-logout-btn"
+              id={isMobile ? 'mobile-sidebar-logout' : 'sidebar-logout-btn'}
               onClick={logout}
               title="Logout session"
               className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
@@ -146,6 +172,34 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside
+        id="crm-sidebar"
+        className="hidden lg:flex w-64 bg-white dark:bg-[#0E121E] text-slate-800 dark:text-slate-200 flex-col shrink-0 border-r border-slate-200 dark:border-slate-800/80 select-none h-screen sticky top-0 transition-colors duration-200 z-30"
+      >
+        {renderNavContent(false)}
+      </aside>
+
+      {/* Mobile Overlay Sidebar Drawer */}
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+
+          {/* Slide-in Drawer */}
+          <aside className="relative w-72 max-w-[85vw] bg-white dark:bg-[#0E121E] text-slate-800 dark:text-slate-200 h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200 border-r border-slate-200 dark:border-slate-800/80">
+            {renderNavContent(true)}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

@@ -138,6 +138,10 @@ interface CrmContextType {
   setTheme: (theme: 'dark' | 'light') => void;
   toggleTheme: () => void;
 
+  // Responsive Mobile Navigation
+  isMobileSidebarOpen: boolean;
+  setIsMobileSidebarOpen: (open: boolean) => void;
+
   // Reset demo data
   resetAllData: () => void;
   resetToFactoryDefaults: () => void;
@@ -244,6 +248,9 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+  // Responsive Mobile Navigation Sidebar
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // TheMaverics Theme Management ('dark' | 'light')
   const [theme, setThemeState] = useState<'dark' | 'light'>(() => {
@@ -936,6 +943,9 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         theme,
         setTheme,
         toggleTheme,
+
+        isMobileSidebarOpen,
+        setIsMobileSidebarOpen,
 
         resetAllData,
         resetToFactoryDefaults: resetAllData,

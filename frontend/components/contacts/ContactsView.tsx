@@ -56,12 +56,12 @@ export const ContactsView: React.FC = () => {
   };
 
   return (
-    <div id="crm-contacts-view" className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div id="crm-contacts-view" className="p-3.5 sm:p-6 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Client Contacts</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Client Contacts</h1>
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full">
               {contacts.length} Total Stakeholders
             </span>
@@ -71,15 +71,15 @@ export const ContactsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap">
           <button
             id="scan-card-ocr-btn"
             onClick={() => openOcrScanner()}
-            className="px-4 py-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-xs"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-xs"
             title="Scan physical or digital business card with Gemini Vision OCR"
           >
             <CreditCard className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span>Scan Visiting Card (OCR)</span>
+            <span>Scan Card (OCR)</span>
           </button>
 
           <button
@@ -88,7 +88,7 @@ export const ContactsView: React.FC = () => {
               setEditingContact(null);
               setIsContactModalOpen(true);
             }}
-            className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer shrink-0"
+            className="flex-1 sm:flex-none px-3.5 sm:px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Contact</span>
@@ -97,8 +97,8 @@ export const ContactsView: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-[#111625] p-4 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xs flex flex-wrap items-center gap-3 transition-colors">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="bg-white dark:bg-[#111625] p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xs flex flex-wrap items-center gap-2.5 sm:gap-3 transition-colors">
+        <div className="relative flex-1 min-w-[200px] w-full sm:w-auto">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"

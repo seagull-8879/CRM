@@ -42,12 +42,12 @@ export const AccountsView: React.FC = () => {
   const industries = Array.from(new Set(accounts.map((a) => a.industry)));
 
   return (
-    <div id="crm-accounts-view" className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div id="crm-accounts-view" className="p-3.5 sm:p-6 space-y-5 sm:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#111625] p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-xs transition-colors">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Client Accounts</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">Client Accounts</h1>
             <span className="text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-0.5 rounded-full">
               {accounts.length} Total Companies
             </span>
@@ -63,7 +63,7 @@ export const AccountsView: React.FC = () => {
             setEditingAccount(null);
             setIsAccountModalOpen(true);
           }}
-          className="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer shrink-0"
+          className="w-full sm:w-auto justify-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-purple-900/20 transition-all active:scale-[0.98] cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>New Account</span>
@@ -71,8 +71,8 @@ export const AccountsView: React.FC = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white dark:bg-[#111625] p-4 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xs flex flex-wrap items-center gap-3 transition-colors">
-        <div className="relative flex-1 min-w-[220px]">
+      <div className="bg-white dark:bg-[#111625] p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-xs flex flex-wrap items-center gap-2.5 sm:gap-3 transition-colors">
+        <div className="relative flex-1 min-w-[200px] w-full sm:w-auto">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
