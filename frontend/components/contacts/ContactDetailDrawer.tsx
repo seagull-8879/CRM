@@ -9,6 +9,8 @@ import {
   Clock,
   Edit2,
   Sparkles,
+  CreditCard,
+  MapPin,
 } from 'lucide-react';
 import { useCrm } from '../../context/CrmContext';
 
@@ -26,6 +28,7 @@ export const ContactDetailDrawer: React.FC = () => {
     setSelectedOpportunityForDetail,
     setIsEmailComposerOpen,
     setEmailComposerData,
+    openOcrScanner,
   } = useCrm();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'opportunities' | 'activities'>('profile');
@@ -80,6 +83,12 @@ export const ContactDetailDrawer: React.FC = () => {
                   <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                     {contact.salutation} {contact.firstName} {contact.lastName}
                   </h2>
+                  {contact.source === 'Visiting Card OCR' && (
+                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <CreditCard className="w-3 h-3" />
+                      Card OCR
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">{contact.jobTitle}</div>
                 <button
@@ -124,6 +133,16 @@ export const ContactDetailDrawer: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5 text-purple-200" />
               <span>Draft AI Email</span>
             </button>
+
+            <button
+              onClick={() => openOcrScanner(contact.id)}
+              className="py-2 px-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all border border-purple-500/30 cursor-pointer"
+              title="Rescan or update info via business card OCR"
+            >
+              <CreditCard className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Scan Card Update</span>
+            </button>
+
             {contact.phone && (
               <a
                 href={`tel:${contact.phone}`}
@@ -166,6 +185,21 @@ export const ContactDetailDrawer: React.FC = () => {
         <div className="p-6 overflow-y-auto flex-1 text-xs space-y-5 text-slate-700 dark:text-slate-300">
           {activeTab === 'profile' && (
             <div className="space-y-4">
+              {/* Scanned Business Card Asset Preview if available */}
+              {contact.cardImageUrl && (
+                <div className="p-4 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Digitized Visiting Card Image</span>
+                  </div>
+                  <img
+                    src={contact.cardImageUrl}
+                    alt="Business Card"
+                    className="w-full max-h-44 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm"
+                  />
+                </div>
+              )}
+
               <div className="p-4 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                 <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs">
                   Contact Information
@@ -206,6 +240,23 @@ export const ContactDetailDrawer: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Address Information */}
+              {(contact.street || contact.city || contact.country) && (
+                <div className="p-4 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-xs flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-purple-500" />
+                    <span>Office Location</span>
+                  </div>
+                  <div className="text-slate-700 dark:text-slate-300 font-medium">
+                    {contact.street && <div>{contact.street}</div>}
+                    <div>
+                      {[contact.city, contact.state, contact.postalCode].filter(Boolean).join(', ')}
+                    </div>
+                    {contact.country && <div className="text-slate-500 text-[11px]">{contact.country}</div>}
+                  </div>
+                </div>
+              )}
 
               {/* Notes */}
               <div className="p-4 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl space-y-2">

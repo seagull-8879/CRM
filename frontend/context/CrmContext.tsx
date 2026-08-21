@@ -100,6 +100,9 @@ interface CrmContextType {
 
   isOcrScannerOpen: boolean;
   setIsOcrScannerOpen: (open: boolean) => void;
+  ocrTargetContactId: string | null;
+  setOcrTargetContactId: (id: string | null) => void;
+  openOcrScanner: (targetContactId?: string) => void;
 
   isEmailComposerOpen: boolean;
   setIsEmailComposerOpen: (open: boolean) => void;
@@ -138,7 +141,7 @@ interface CrmContextType {
   // Reset demo data
   resetAllData: () => void;
   resetToFactoryDefaults: () => void;
-  processOcrCard?: (imageData: string) => Promise<any>;
+  processOcrCard: (cardData: any, target: any, imageUri?: string, contactIdToUpdate?: string) => Contact;
 }
 
 const CrmContext = createContext<CrmContextType | undefined>(undefined);
@@ -218,7 +221,13 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   const [isOcrScannerOpen, setIsOcrScannerOpen] = useState(false);
+  const [ocrTargetContactId, setOcrTargetContactId] = useState<string | null>(null);
   const [isEmailComposerOpen, setIsEmailComposerOpen] = useState(false);
+
+  const openOcrScanner = (targetContactId?: string) => {
+    setOcrTargetContactId(targetContactId || null);
+    setIsOcrScannerOpen(true);
+  };
   const [emailComposerData, setEmailComposerData] = useState<EmailComposerData | null>(null);
   const [selectedAccountIdFor360, setSelectedAccountIdFor360] = useState<string | null>(null);
   const [selectedContactIdFor360, setSelectedContactIdFor360] = useState<string | null>(null);
@@ -673,7 +682,12 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveTab('home');
   };
 
-  const processOcrCard = (cardData: any, target: any) => {
+  const processOcrCard = (
+    cardData: any,
+    target: any,
+    imageUri?: string,
+    contactIdToUpdate?: string
+  ): Contact => {
     let accountId = target.selectedExistingAccountId;
     let accountName = cardData.companyName || 'New Account';
 
@@ -695,6 +709,7 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         billingStreet: cardData.street,
         billingCity: cardData.city,
         billingState: cardData.state,
+        billingPostalCode: cardData.postalCode,
         billingCountry: cardData.country || 'United States',
         leadSource: 'Visiting Card OCR',
         description: `Imported via AI Card OCR for contact ${cardData.firstName} ${cardData.lastName}`,
@@ -703,28 +718,91 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       accountName = newAcc.name;
     }
 
-    const newContact = addContact({
-      salutation: cardData.salutation || 'Mr.',
-      firstName: cardData.firstName || 'Unknown',
-      lastName: cardData.lastName || 'Contact',
-      accountId: accountId || '',
-      accountName: accountName,
-      jobTitle: cardData.jobTitle || 'Executive',
-      email: cardData.email || `${(cardData.firstName || 'user').toLowerCase()}@${cardData.companyName ? cardData.companyName.toLowerCase().replace(/\s+/g, '') + '.com' : 'example.com'}`,
-      phone: cardData.phone || '',
-      mobile: cardData.mobile || '',
-      preferredContactMethod: 'Email',
-      source: 'Visiting Card OCR',
-      street: cardData.street,
-      city: cardData.city,
-      state: cardData.state,
-      country: cardData.country || 'United States',
-      ownerId: currentUser?.id || 'usr-1',
-      ownerName: currentUser?.name || 'Janaki Pawar',
-      notes: 'Created via Multimodal Business Card OCR Scanner',
-    });
+    let resultingContact: Contact;
 
-    if (target.createOpportunity) {
+    if (contactIdToUpdate) {
+      // Updating an existing contact record with new visiting card details
+      updateContact(contactIdToUpdate, {
+        salutation: cardData.salutation || 'Mr.',
+        firstName: cardData.firstName || 'Unknown',
+        lastName: cardData.lastName || 'Contact',
+        jobTitle: cardData.jobTitle || 'Executive',
+        department: cardData.department || '',
+        email: cardData.email || '',
+        phone: cardData.phone || '',
+        mobile: cardData.mobile || '',
+        street: cardData.street || '',
+        city: cardData.city || '',
+        state: cardData.state || '',
+        country: cardData.country || 'United States',
+        postalCode: cardData.postalCode || '',
+        accountId: accountId || '',
+        accountName: accountName,
+        source: 'Visiting Card OCR',
+        cardImageUrl: imageUri || undefined,
+        notes: cardData.notes || 'Updated via Visiting Card OCR Scanner',
+      });
+
+      const existing = contacts.find((c) => c.id === contactIdToUpdate);
+      resultingContact = existing
+        ? {
+            ...existing,
+            ...cardData,
+            accountId: accountId || existing.accountId,
+            accountName: accountName || existing.accountName,
+            cardImageUrl: imageUri || existing.cardImageUrl,
+          }
+        : ({ id: contactIdToUpdate, ...cardData, accountId, accountName } as Contact);
+
+      logActivity({
+        type: 'OCR Card Scan',
+        title: `Contact Updated via Card OCR: ${cardData.firstName} ${cardData.lastName}`,
+        description: `Updated business card coordinates for ${cardData.jobTitle || 'Executive'} at ${accountName}.`,
+        relatedToType: 'Contact',
+        relatedToId: contactIdToUpdate,
+        relatedToName: `${cardData.firstName} ${cardData.lastName}`,
+      });
+    } else {
+      // Creating a new contact record
+      resultingContact = addContact({
+        salutation: cardData.salutation || 'Mr.',
+        firstName: cardData.firstName || 'Unknown',
+        lastName: cardData.lastName || 'Contact',
+        accountId: accountId || '',
+        accountName: accountName,
+        jobTitle: cardData.jobTitle || 'Executive',
+        department: cardData.department || '',
+        email:
+          cardData.email ||
+          `${(cardData.firstName || 'user').toLowerCase()}@${
+            cardData.companyName ? cardData.companyName.toLowerCase().replace(/\s+/g, '') + '.com' : 'example.com'
+          }`,
+        phone: cardData.phone || '',
+        mobile: cardData.mobile || '',
+        preferredContactMethod: 'Email',
+        source: 'Visiting Card OCR',
+        street: cardData.street,
+        city: cardData.city,
+        state: cardData.state,
+        country: cardData.country || 'United States',
+        postalCode: cardData.postalCode || '',
+        cardImageUrl: imageUri || undefined,
+        ownerId: currentUser?.id || 'usr-1',
+        ownerName: currentUser?.name || 'Janaki Pawar',
+        notes: cardData.notes || 'Created via Multimodal Business Card OCR Scanner',
+      });
+
+      logActivity({
+        type: 'OCR Card Scan',
+        title: `Visiting Card Scanned: ${cardData.firstName} ${cardData.lastName}`,
+        description: `Digitized business card for ${cardData.jobTitle || 'Executive'} at ${accountName}`,
+        relatedToType: 'Contact',
+        relatedToId: resultingContact.id,
+        relatedToName: `${resultingContact.firstName} ${resultingContact.lastName}`,
+      });
+    }
+
+    if (target.createOpportunity && resultingContact) {
       const oppCloseDate = new Date();
       oppCloseDate.setDate(oppCloseDate.getDate() + 45);
 
@@ -732,8 +810,8 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: target.opportunityName || `${accountName} - Initial Engagement`,
         accountId: accountId || '',
         accountName: accountName,
-        primaryContactId: newContact.id,
-        primaryContactName: `${newContact.firstName} ${newContact.lastName}`,
+        primaryContactId: resultingContact.id,
+        primaryContactName: `${resultingContact.firstName} ${resultingContact.lastName}`,
         amount: target.opportunityAmount || 50000,
         stage: target.opportunityStage || 'Qualification',
         probability: 20,
@@ -748,14 +826,19 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
-    logActivity({
-      type: 'OCR Card Scan',
-      title: `Visiting Card Scanned: ${cardData.firstName} ${cardData.lastName}`,
-      description: `Digitized business card for ${cardData.jobTitle || 'Executive'} at ${accountName}`,
-      relatedToType: 'Contact',
-      relatedToId: newContact.id,
-      relatedToName: `${newContact.firstName} ${newContact.lastName}`,
-    });
+    // Also sync to backend asynchronously for persistence
+    fetch('/api/ocr/scan-and-save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cardData,
+        target,
+        image: imageUri,
+        contactIdToUpdate,
+      }),
+    }).catch((err) => console.warn('[CRM Backend Sync]:', err));
+
+    return resultingContact;
   };
 
   return (
@@ -826,6 +909,9 @@ export const CrmProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         isOcrScannerOpen,
         setIsOcrScannerOpen,
+        ocrTargetContactId,
+        setOcrTargetContactId,
+        openOcrScanner,
 
         isEmailComposerOpen,
         setIsEmailComposerOpen,
