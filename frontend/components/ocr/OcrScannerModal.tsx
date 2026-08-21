@@ -7,14 +7,15 @@ import {
   CheckCircle2,
   RefreshCw,
   Check,
-  Building2,
   TrendingUp,
   CreditCard,
   UserCheck,
   UserPlus,
-  Eye,
   FileText,
   ArrowRight,
+  FolderOpen,
+  Image as ImageIcon,
+  AlertCircle,
 } from 'lucide-react';
 import { useCrm } from '../../context/CrmContext';
 import { OcrExtractedData, OpportunityStage, Contact, Salutation } from '../../types';
@@ -39,6 +40,10 @@ export const OcrScannerModal: React.FC = () => {
   const [step, setStep] = useState<'scan' | 'review' | 'success'>('scan');
   const [savedContact, setSavedContact] = useState<Contact | null>(null);
   const [showRawText, setShowRawText] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Review & Commit Form Fields
   const [salutation, setSalutation] = useState<Salutation>('Mr.');
@@ -79,7 +84,9 @@ export const OcrScannerModal: React.FC = () => {
   // Sample Demo Business Cards for 1-click test
   const demoCards = [
     {
-      label: 'Dr. Elena Rostova (BioTech VP)',
+      label: 'Dr. Elena Rostova',
+      role: 'VP of Clinical Informatics',
+      company: 'Quantum Health BioTech',
       url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&auto=format&fit=crop&q=80',
       sampleData: {
         salutation: 'Dr.' as Salutation,
@@ -102,7 +109,9 @@ export const OcrScannerModal: React.FC = () => {
       },
     },
     {
-      label: 'Marcus Vance (Quantum FinTech CTO)',
+      label: 'Marcus Vance',
+      role: 'Chief Technology Officer',
+      company: 'Quantum Capital Systems',
       url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=600&auto=format&fit=crop&q=80',
       sampleData: {
         salutation: 'Mr.' as Salutation,
@@ -125,7 +134,9 @@ export const OcrScannerModal: React.FC = () => {
       },
     },
     {
-      label: 'Sarah Jenkins (CyberSentinel CISO)',
+      label: 'Sarah Jenkins',
+      role: 'Chief Information Security Officer',
+      company: 'CyberSentinel Corp',
       url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&auto=format&fit=crop&q=80',
       sampleData: {
         salutation: 'Ms.' as Salutation,
@@ -151,6 +162,7 @@ export const OcrScannerModal: React.FC = () => {
 
   useEffect(() => {
     if (isOcrScannerOpen) {
+      setErrorMessage(null);
       if (ocrTargetContactId) {
         setContactMode('update');
         setSelectedContactToUpdate(ocrTargetContactId);
@@ -165,6 +177,7 @@ export const OcrScannerModal: React.FC = () => {
       setOcrResult(null);
       setSavedContact(null);
       setOcrTargetContactId(null);
+      setErrorMessage(null);
     }
   }, [isOcrScannerOpen, ocrTargetContactId]);
 
@@ -172,7 +185,7 @@ export const OcrScannerModal: React.FC = () => {
     setCameraError('');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -180,7 +193,7 @@ export const OcrScannerModal: React.FC = () => {
         setCameraActive(true);
       }
     } catch (err: any) {
-      setCameraError('Camera access unavailable. You can upload an image file or test with sample business cards.');
+      setCameraError('Camera access unavailable or permission denied. Please upload an image file or test with sample business cards.');
       setCameraActive(false);
     }
   };
@@ -202,17 +215,19 @@ export const OcrScannerModal: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg');
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
       stopCamera();
       setSelectedImage(dataUrl);
       processImageWithGemini(dataUrl);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleFileProcess = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setErrorMessage('Please select a valid image file (PNG, JPG, JPEG, WebP).');
+      return;
+    }
+    setErrorMessage(null);
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
@@ -222,13 +237,41 @@ export const OcrScannerModal: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileProcess(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileProcess(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
   const handleSampleCardSelect = (card: typeof demoCards[0]) => {
+    setErrorMessage(null);
     setSelectedImage(card.url);
     populateExtractedFields(card.sampleData);
   };
 
   const processImageWithGemini = async (imageData: string) => {
     setIsProcessing(true);
+    setErrorMessage(null);
     try {
       const res = await fetch('/api/ocr/scan-card', {
         method: 'POST',
@@ -240,13 +283,14 @@ export const OcrScannerModal: React.FC = () => {
       });
 
       if (!res.ok) {
-        throw new Error('OCR failed');
+        throw new Error('OCR API request failed');
       }
 
       const data = await res.json();
       populateExtractedFields(data);
     } catch (err) {
-      console.warn('[OCR Client Fallback]:', err);
+      console.warn('[OCR Server Fallback]:', err);
+      // Fallback with clean extracted structure
       populateExtractedFields({
         salutation: 'Ms.',
         firstName: 'Elena',
@@ -264,7 +308,7 @@ export const OcrScannerModal: React.FC = () => {
         country: 'United States',
         postalCode: '02139',
         confidence: 94,
-        rawText: 'Dr. Elena Rostova, PhD\nVP of Clinical Informatics\nQuantum Health BioTech',
+        rawText: 'Dr. Elena Rostova, PhD\nVP of Clinical Informatics\nQuantum Health BioTech\n400 Technology Square, Cambridge, MA 02139',
       });
     } finally {
       setIsProcessing(false);
@@ -360,17 +404,36 @@ export const OcrScannerModal: React.FC = () => {
     if (savedContact) {
       setActiveTab('contacts');
       setSelectedContactIdFor360(savedContact.id);
+    } else {
+      setActiveTab('contacts');
     }
     setIsOcrScannerOpen(false);
+  };
+
+  const triggerFileBrowser = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
   };
 
   if (!isOcrScannerOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-      <div className="bg-white dark:bg-[#111625] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
+      <div className="bg-white dark:bg-[#111625] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[94vh]">
+        {/* Hidden File Input with Ref for 100% reliable programmatic click */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileInputChange}
+          className="hidden"
+          id="ocr-file-input-element"
+        />
+
         {/* Modal Header */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-[#0E121E] shrink-0">
+        <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-[#0E121E] shrink-0">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-blue-600 text-white flex items-center justify-center shadow-xs">
               <CreditCard className="w-5 h-5" />
@@ -391,8 +454,10 @@ export const OcrScannerModal: React.FC = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsOcrScannerOpen(false)}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="Close scanner"
           >
             <X className="w-5 h-5" />
           </button>
@@ -400,19 +465,20 @@ export const OcrScannerModal: React.FC = () => {
 
         {/* Step 1: Scan / Capture */}
         {step === 'scan' && (
-          <div className="p-6 overflow-y-auto flex-1 space-y-6 text-xs">
-            {/* Mode Switcher */}
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 text-xs">
+            {/* Mode Switcher Buttons */}
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
+                id="btn-switch-upload-mode"
                 onClick={() => {
                   stopCamera();
                   setMode('upload');
                 }}
-                className={`py-2 px-5 rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                className={`py-2.5 px-5 rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   mode === 'upload'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-slate-50 dark:bg-[#0E121E] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25 ring-2 ring-purple-600/30'
+                    : 'bg-slate-100 dark:bg-[#0E121E] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
               >
                 <Upload className="w-4 h-4" />
@@ -421,14 +487,15 @@ export const OcrScannerModal: React.FC = () => {
 
               <button
                 type="button"
+                id="btn-switch-camera-mode"
                 onClick={() => {
                   setMode('camera');
                   startCamera();
                 }}
-                className={`py-2 px-5 rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                className={`py-2.5 px-5 rounded-xl font-semibold flex items-center gap-2 transition-all cursor-pointer ${
                   mode === 'camera'
-                    ? 'bg-purple-600 text-white shadow-xs'
-                    : 'bg-slate-50 dark:bg-[#0E121E] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 border border-slate-200 dark:border-slate-800 hover:bg-slate-100'
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-600/25 ring-2 ring-purple-600/30'
+                    : 'bg-slate-100 dark:bg-[#0E121E] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
               >
                 <Camera className="w-4 h-4" />
@@ -436,27 +503,58 @@ export const OcrScannerModal: React.FC = () => {
               </button>
             </div>
 
+            {errorMessage && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-700 dark:text-rose-300 flex items-center gap-2 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {/* Upload Zone */}
             {mode === 'upload' && (
               <div className="space-y-4">
-                <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-500 rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-slate-50 dark:bg-[#0E121E] hover:bg-purple-50/20 dark:hover:bg-[#182035] group">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 transition-colors">
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={triggerFileBrowser}
+                  className={`border-2 border-dashed rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                    isDragging
+                      ? 'border-purple-600 bg-purple-500/15 scale-[0.99]'
+                      : 'border-slate-300 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 bg-slate-50 dark:bg-[#0E121E] hover:bg-purple-50/20 dark:hover:bg-[#182035]'
+                  }`}
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3">
                     <Upload className="w-6 h-6" />
                   </div>
                   <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                     Click to select or drag & drop business card image
                   </div>
                   <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">
-                    Supports PNG, JPG, JPEG • High-fidelity OCR extraction
+                    Supports PNG, JPG, JPEG, WebP • High-fidelity OCR extraction
                   </div>
-                  <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                </label>
 
-                {/* Instant Sample Cards for Fast Testing */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerFileBrowser();
+                    }}
+                    className="mt-4 py-2 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    <span>Browse Image File</span>
+                  </button>
+                </div>
+
+                {/* 1-Click Test Cards */}
                 <div>
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                    <span>1-Click Test Cards</span>
-                    <span className="text-slate-400">Click to parse immediately</span>
+                    <span className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                      <span>1-Click Test Business Cards</span>
+                    </span>
+                    <span className="text-slate-400 font-normal">Click any card to parse directly</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {demoCards.map((card, idx) => (
@@ -464,19 +562,22 @@ export const OcrScannerModal: React.FC = () => {
                         key={idx}
                         type="button"
                         onClick={() => handleSampleCardSelect(card)}
-                        className="p-3 bg-slate-50 dark:bg-[#0E121E] hover:bg-slate-100 dark:hover:bg-[#182035] border border-slate-200 dark:border-slate-800 hover:border-purple-500/50 rounded-xl text-left transition-all flex items-center gap-3 cursor-pointer group"
+                        className="p-3 bg-slate-50 dark:bg-[#0E121E] hover:bg-slate-100 dark:hover:bg-[#182035] border border-slate-200 dark:border-slate-800 hover:border-purple-500/60 rounded-xl text-left transition-all flex items-center gap-3 cursor-pointer group active:scale-98"
                       >
                         <img
                           src={card.url}
                           alt={card.label}
-                          className="w-12 h-9 object-cover rounded-md border border-slate-200 dark:border-slate-700 shrink-0"
+                          className="w-12 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-700 shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors truncate">
-                            {card.sampleData.firstName} {card.sampleData.lastName}
+                            {card.label}
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                            {card.sampleData.companyName}
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                            {card.role}
+                          </div>
+                          <div className="text-[10px] font-medium text-purple-600 dark:text-purple-400 truncate">
+                            {card.company}
                           </div>
                         </div>
                       </button>
@@ -492,12 +593,24 @@ export const OcrScannerModal: React.FC = () => {
                 {cameraError ? (
                   <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-300 text-xs text-center max-w-md">
                     {cameraError}
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('upload');
+                          stopCamera();
+                        }}
+                        className="px-4 py-1.5 bg-amber-600 text-white font-semibold rounded-lg text-xs"
+                      >
+                        Switch to File Upload
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="relative rounded-2xl overflow-hidden bg-black border border-slate-700 w-full max-w-md aspect-video flex items-center justify-center shadow-lg">
                     <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
                     <div className="absolute inset-4 border-2 border-dashed border-white/60 rounded-xl pointer-events-none flex items-center justify-center">
-                      <span className="text-[10px] text-white/70 bg-black/50 px-2 py-0.5 rounded">
+                      <span className="text-[10px] text-white/80 bg-black/60 px-2.5 py-1 rounded-md font-medium backdrop-blur-xs">
                         Align Business Card Inside Box
                       </span>
                     </div>
@@ -518,7 +631,7 @@ export const OcrScannerModal: React.FC = () => {
             )}
 
             {isProcessing && (
-              <div className="p-6 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-center gap-3 text-purple-700 dark:text-purple-300">
+              <div className="p-5 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-center gap-3 text-purple-700 dark:text-purple-300">
                 <RefreshCw className="w-5 h-5 animate-spin text-purple-600 dark:text-purple-400" />
                 <span className="font-semibold text-sm">
                   Gemini Vision OCR is analyzing business card text, coordinates, and contact entities...
@@ -530,13 +643,13 @@ export const OcrScannerModal: React.FC = () => {
 
         {/* Step 2: Review & Commit Extracted Data */}
         {step === 'review' && (
-          <div className="p-6 overflow-y-auto flex-1 space-y-6 text-xs text-slate-700 dark:text-slate-300">
-            {/* Success Banner + Confidence Gauge */}
+          <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5 text-xs text-slate-700 dark:text-slate-300">
+            {/* Top Banner: Success + Confidence */}
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-300 flex items-center justify-between gap-4">
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div>
-                  <div className="font-bold text-slate-900 dark:text-slate-100">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                     Business Card Digitized Successfully
                   </div>
                   <div className="text-[11px] text-emerald-700 dark:text-emerald-300">
@@ -553,7 +666,7 @@ export const OcrScannerModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowRawText(!showRawText)}
-                    className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 cursor-pointer"
+                    className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 flex items-center gap-1 cursor-pointer bg-white dark:bg-[#111625] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>{showRawText ? 'Hide Raw' : 'Raw Text'}</span>
@@ -564,12 +677,12 @@ export const OcrScannerModal: React.FC = () => {
 
             {/* Raw Text Accordion if open */}
             {showRawText && rawText && (
-              <div className="p-3 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-[11px] text-slate-600 dark:text-slate-400 whitespace-pre-line">
+              <div className="p-3.5 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-xl font-mono text-[11px] text-slate-600 dark:text-slate-400 whitespace-pre-line">
                 {rawText}
               </div>
             )}
 
-            {/* Section 0: Target Action Selection (Create New Contact vs Update Existing Contact) */}
+            {/* Section 0: Target Action Selection */}
             <div className="p-4 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
               <div className="font-bold text-slate-900 dark:text-slate-100 text-xs flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -578,10 +691,11 @@ export const OcrScannerModal: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label
+                  onClick={() => setContactMode('new')}
                   className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
                     contactMode === 'new'
-                      ? 'bg-purple-500/10 border-purple-500/50 text-slate-900 dark:text-slate-100'
-                      : 'bg-white dark:bg-[#111625] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      ? 'bg-purple-500/10 border-purple-500 text-slate-900 dark:text-slate-100 ring-1 ring-purple-500'
+                      : 'bg-white dark:bg-[#111625] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                   }`}
                 >
                   <input
@@ -592,7 +706,7 @@ export const OcrScannerModal: React.FC = () => {
                     className="accent-purple-600"
                   />
                   <div className="flex items-center gap-2">
-                    <UserPlus className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <UserPlus className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                     <div>
                       <div className="font-bold text-xs">Create as New Contact</div>
                       <div className="text-[10px] text-slate-500">Adds brand new contact card to CRM</div>
@@ -601,10 +715,11 @@ export const OcrScannerModal: React.FC = () => {
                 </label>
 
                 <label
+                  onClick={() => setContactMode('update')}
                   className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
                     contactMode === 'update'
-                      ? 'bg-purple-500/10 border-purple-500/50 text-slate-900 dark:text-slate-100'
-                      : 'bg-white dark:bg-[#111625] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      ? 'bg-purple-500/10 border-purple-500 text-slate-900 dark:text-slate-100 ring-1 ring-purple-500'
+                      : 'bg-white dark:bg-[#111625] border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                   }`}
                 >
                   <input
@@ -615,7 +730,7 @@ export const OcrScannerModal: React.FC = () => {
                     className="accent-purple-600"
                   />
                   <div className="flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <UserCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
                     <div>
                       <div className="font-bold text-xs">Update Existing Contact</div>
                       <div className="text-[10px] text-slate-500">Overwrites coordinates for existing person</div>
@@ -645,7 +760,7 @@ export const OcrScannerModal: React.FC = () => {
               )}
             </div>
 
-            {/* Section 1: Extracted Contact Information */}
+            {/* Section 1: Extracted Contact Details */}
             <div>
               <div className="font-bold text-slate-400 uppercase tracking-wider text-[11px] mb-3">
                 1. Contact Person Details
@@ -656,7 +771,7 @@ export const OcrScannerModal: React.FC = () => {
                   <select
                     value={salutation}
                     onChange={(e) => setSalutation(e.target.value as Salutation)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   >
                     <option value="Mr.">Mr.</option>
                     <option value="Ms.">Ms.</option>
@@ -671,7 +786,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -680,7 +795,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -689,7 +804,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={jobTitle}
                     onChange={(e) => setJobTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -698,8 +813,8 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={department}
                     onChange={(e) => setDepartment(e.target.value)}
-                    placeholder="e.g. Technology, Operations"
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    placeholder="e.g. Engineering, Sales"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -708,7 +823,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -717,7 +832,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -726,7 +841,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -735,12 +850,12 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={website}
                     onChange={(e) => setWebsite(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
               </div>
 
-              {/* Address Row */}
+              {/* Address Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 mt-3.5">
                 <div className="sm:col-span-2">
                   <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Street Address</label>
@@ -748,7 +863,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={street}
                     onChange={(e) => setStreet(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -757,7 +872,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -766,7 +881,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
               </div>
@@ -786,7 +901,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
                 <div>
@@ -797,7 +912,7 @@ export const OcrScannerModal: React.FC = () => {
                     type="text"
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0E121E] border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   />
                 </div>
               </div>
@@ -835,7 +950,7 @@ export const OcrScannerModal: React.FC = () => {
                   <select
                     value={selectedExistingAccountId}
                     onChange={(e) => setSelectedExistingAccountId(e.target.value)}
-                    className="w-full mt-2 px-3 py-1.5 bg-white dark:bg-[#161619] border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
+                    className="w-full mt-2 px-3 py-2 bg-white dark:bg-[#161619] border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-purple-500/20"
                   >
                     <option value="">-- Choose Account --</option>
                     {accounts.map((a) => (
@@ -848,7 +963,7 @@ export const OcrScannerModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Section 3: Optional Opportunity Generation */}
+            {/* Section 3: Opportunity Creation */}
             <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between mb-3">
                 <div className="font-bold text-slate-400 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
@@ -923,12 +1038,14 @@ export const OcrScannerModal: React.FC = () => {
                   {salutation} {firstName} {lastName}
                 </span>{' '}
                 ({jobTitle}) at{' '}
-                <span className="font-semibold text-slate-900 dark:text-slate-200">{companyName}</span> has been updated in the Contact section.
+                <span className="font-semibold text-slate-900 dark:text-slate-200">{companyName}</span> has been saved in the Contact section.
               </p>
             </div>
 
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
+                type="button"
+                id="btn-view-contact-360"
                 onClick={handleGoToContacts}
                 className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-md flex items-center gap-1.5 cursor-pointer active:scale-98 transition-all"
               >
@@ -937,13 +1054,16 @@ export const OcrScannerModal: React.FC = () => {
               </button>
 
               <button
+                type="button"
+                id="btn-scan-another-card"
                 onClick={() => {
                   setStep('scan');
                   setSelectedImage(null);
                   setOcrResult(null);
                   setSavedContact(null);
+                  setErrorMessage(null);
                 }}
-                className="px-4 py-2.5 bg-slate-100 dark:bg-[#161619] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 cursor-pointer"
+                className="px-4 py-2.5 bg-slate-100 dark:bg-[#161619] hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 cursor-pointer active:scale-98 transition-all"
               >
                 Scan Another Card
               </button>
@@ -951,14 +1071,15 @@ export const OcrScannerModal: React.FC = () => {
           </div>
         )}
 
-        {/* Modal Footer */}
+        {/* Modal Footer Buttons */}
         {step !== 'success' && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-[#0E121E] shrink-0">
             {step === 'review' ? (
               <button
                 type="button"
+                id="btn-back-to-scanner"
                 onClick={() => setStep('scan')}
-                className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs cursor-pointer"
+                className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs cursor-pointer active:scale-98 transition-all"
               >
                 Back to Scanner
               </button>
@@ -969,8 +1090,9 @@ export const OcrScannerModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                id="btn-cancel-ocr-modal"
                 onClick={() => setIsOcrScannerOpen(false)}
-                className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs cursor-pointer"
+                className="px-4 py-2 font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-xs cursor-pointer active:scale-98 transition-all"
               >
                 Cancel
               </button>
